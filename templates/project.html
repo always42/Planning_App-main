@@ -1,0 +1,298 @@
+{# prettier-ignore #}
+{% extends "base.html" %}
+
+{% block title %}{{ name }} - Project Manager{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Project Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item active">{{ name }}</li>
+                </ol>
+            </nav>
+            <h1>{{ name }}</h1>
+            <p class="text-muted">{{ project.description }}</p>
+            {% if project.type == 'idea' %}
+                <span class="badge bg-info">Idea</span>
+            {% endif %}
+            {% for tag in project.tags %}
+                <span class="badge bg-secondary">{{ tag }}</span>
+            {% endfor %}
+        </div>
+        <div class="col-auto">
+            <button type="button" class="btn btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#editProjectModal">
+                <i class="bi bi-pencil"></i> Edit Project
+            </button>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+                <i class="bi bi-plus"></i> Add Task
+            </button>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Task Management Section -->
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Task Controls -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <select class="form-select form-select-sm" id="taskSort" onchange="sortTasks(this.value)">
+                                <option value="priority">Sort by Priority</option>
+                                <option value="dueDate">Sort by Due Date</option>
+                                <option value="created">Sort by Created Date</option>
+                            </select>
+                        </div>
+                        <div>
+                            <select class="form-select form-select-sm" id="priorityFilter" onchange="filterTasks(this.value)">
+                                <option value="all">All Priorities</option>
+                                <option value="high">High Priority</option>
+                                <option value="medium">Medium Priority</option>
+                                <option value="low">Low Priority</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tasks Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Tasks</h5>
+                </div>
+                <div class="card-body">
+                    {% if project.tasks %}
+                        <ul class="list-group list-group-flush" id="taskList">
+                        {% for task in project.tasks|sort(attribute='priority_order', reverse=true) %}
+                            <li class="list-group-item task-item" 
+                                data-priority="{{ task.priority }}"
+                                data-due-date="{{ task.due_date }}"
+                                data-created="{{ task.created_at }}">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <input type="checkbox" class="form-check-input me-2" 
+                                               {% if task.completed %}checked{% endif %}
+                                               onclick="window.location.href='{{ url_for('toggle_task', project_name=name, task_index=loop.index0) }}'; return false;">
+                                        <span class="{% if task.completed %}text-decoration-line-through text-muted{% endif %}">
+                                            {{ task.description }}
+                                            <span class="badge {% if task.priority == 'high' %}bg-danger{% elif task.priority == 'medium' %}bg-warning{% else %}bg-success{% endif %} ms-2">
+                                                {{ task.priority|title }}
+                                            </span>
+                                            {% if task.due_date %}
+                                                {% set due = task.due_date.split('T')[0] %}
+                                                {% if due < today %}
+                                                    <span class="badge bg-danger ms-2">Overdue</span>
+                                                {% elif due == today %}
+                                                    <span class="badge bg-warning ms-2">Due Today</span>
+                                                {% endif %}
+                                                <small class="text-muted ms-2">Due: {{ due }}</small>
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">No tasks yet. Add one to get started!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <!-- Project Info Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Project Info</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Status:</strong> {{ project.status.title() }}</p>
+                    <p><strong>Created:</strong> {{ project.created_at.split('T')[0] }}</p>
+                    <p><strong>Tasks:</strong> 
+                        {% set completed = project.tasks|selectattr('completed')|list|length %}
+                        {% set total = project.tasks|length %}
+                        {{ completed }}/{{ total }} completed
+                    </p>
+                    {% if total > 0 %}
+                        {% set percentage = (completed / total * 100)|round %}
+                        <div class="progress">
+                            <div class="progress-bar" role="progressbar" style="width: {{ percentage }}%" 
+                                 aria-valuenow="{{ percentage }}" aria-valuemin="0" aria-valuemax="100">
+                                {{ percentage }}%
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Task Summary Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Task Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6>By Priority</h6>
+                        <p class="mb-1">
+                            <span class="badge bg-danger">High</span>
+                            {{ project.tasks|selectattr('priority', 'eq', 'high')|list|length }}
+                        </p>
+                        <p class="mb-1">
+                            <span class="badge bg-warning">Medium</span>
+                            {{ project.tasks|selectattr('priority', 'eq', 'medium')|list|length }}
+                        </p>
+                        <p class="mb-1">
+                            <span class="badge bg-success">Low</span>
+                            {{ project.tasks|selectattr('priority', 'eq', 'low')|list|length }}
+                        </p>
+                    </div>
+                    <div>
+                        <h6>Upcoming Deadlines</h6>
+                        {% set upcoming = [] %}
+                        {% for task in project.tasks if not task.completed and task.due_date and task.due_date.split('T')[0] >= today %}
+                            {% set _ = upcoming.append(task) %}
+                        {% endfor %}
+                        {% if upcoming %}
+                            {% for task in upcoming|sort(attribute='due_date')|slice(0, 3) %}
+                                <p class="mb-1 small">
+                                    {{ task.description[:30] }}{% if task.description|length > 30 %}...{% endif %}
+                                    <br>
+                                    <small class="text-muted">Due: {{ task.due_date.split('T')[0] }}</small>
+                                </p>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted small">No upcoming deadlines</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Task Modal -->
+<div class="modal fade" id="addTaskModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Task</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('add_task', project_name=name) }}" method="POST">
+                    <div class="mb-3">
+                        <label for="taskDescription" class="form-label">Task Description</label>
+                        <input type="text" class="form-control" id="taskDescription" name="task_description" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="taskPriority" class="form-label">Priority</label>
+                        <select class="form-select" id="taskPriority" name="priority">
+                            <option value="high">High</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="taskDueDate" class="form-label">Due Date</label>
+                        <input type="date" class="form-control" id="taskDueDate" name="due_date">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Task</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include your existing Edit Project Modal here -->
+<!-- Edit Project Modal -->
+<div class="modal fade" id="editProjectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('edit_project', name=name) }}" method="POST">
+                    <div class="mb-3">
+                        <label for="projectName" class="form-label">Project Name</label>
+                        <input type="text" class="form-control" id="projectName" name="name" value="{{ name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="projectDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="projectDescription" name="description" rows="3">{{ project.description }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="projectStatus" class="form-label">Status</label>
+                        <select class="form-select" id="projectStatus" name="status">
+                            <option value="active" {% if project.status == 'active' %}selected{% endif %}>Active</option>
+                            <option value="on_hold" {% if project.status == 'on_hold' %}selected{% endif %}>On Hold</option>
+                            <option value="completed" {% if project.status == 'completed' %}selected{% endif %}>Completed</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="projectTags" class="form-label">Tags (comma-separated)</label>
+                        <input type="text" class="form-control" id="projectTags" name="tags" 
+                               value="{{ project.tags|join(', ') }}" 
+                               placeholder="e.g., urgent, personal, coding">
+                        <div class="form-text">Separate tags with commas</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function sortTasks(criterion) {
+    const taskList = document.getElementById('taskList');
+    const tasks = Array.from(taskList.children);
+    
+    tasks.sort((a, b) => {
+        if (criterion === 'priority') {
+            const priorities = {'high': 3, 'medium': 2, 'low': 1};
+            return priorities[b.dataset.priority] - priorities[a.dataset.priority];
+        } else if (criterion === 'dueDate') {
+            const dateA = a.dataset.dueDate || '9999-99-99';
+            const dateB = b.dataset.dueDate || '9999-99-99';
+            return dateA.localeCompare(dateB);
+        } else {
+            return b.dataset.created.localeCompare(a.dataset.created);
+        }
+    });
+    
+    tasks.forEach(task => taskList.appendChild(task));
+}
+
+function filterTasks(priority) {
+    const tasks = document.querySelectorAll('.task-item');
+    tasks.forEach(task => {
+        if (priority === 'all' || task.dataset.priority === priority.toLowerCase()) {
+            task.style.display = '';
+        } else {
+            task.style.display = 'none';
+        }
+    });
+}
+</script>
+{% endblock %}

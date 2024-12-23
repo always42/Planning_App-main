@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Project Manager{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1>Dashboard</h1>
+    </div>
+    <div class="col-auto">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newProjectModal">
+            New Project
+        </button>
+    </div>
+</div>
+
+<!-- Tag Filter -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Filter by Tags</h5>
+                <div id="tagCloud" class="mb-2">
+                    {% set all_tags = [] %}
+                    {% for project in projects.active.values() %}
+                        {% for tag in project.tags %}
+                            {% if tag not in all_tags %}
+                                {% set _ = all_tags.append(tag) %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endfor %}
+                    {% for tag in all_tags %}
+                        <a href="?tag={{ tag }}" class="badge bg-secondary text-decoration-none me-1">{{ tag }}</a>
+                    {% endfor %}
+                </div>
+                {% if request.args.get('tag') %}
+                    <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-secondary">Clear Filter</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<!-- Active Projects -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h2>Active Projects</h2>
+        <div class="row">
+            {% for name, project in projects.active.items() %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card project-card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ name }}</h5>
+                        <p class="card-text text-muted">{{ project.description }}</p>
+                        <div class="mb-2">
+                            {% if project.status == 'active' %}
+                                <span class="badge bg-success">Active</span>
+                            {% elif project.status == 'on_hold' %}
+                                <span class="badge bg-warning">On Hold</span>
+                            {% elif project.status == 'completed' %}
+                                <span class="badge bg-info">Completed</span>
+                            {% endif %}
+                        </div>
+                        <div class="progress progress-small mb-2">
+                            <div class="progress-bar" style="width: 0%"></div>
+                        </div>
+                        <div class="mb-2">
+                            {% for tag in project.tags %}
+                                <span class="badge bg-secondary">{{ tag }}</span>
+                            {% endfor %}
+                        </div>
+                        <a href="{{ url_for('view_project', name=name) }}" class="btn btn-sm btn-outline-primary">View</a>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col">
+                <p class="text-muted">No active projects yet.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Quick Ideas -->
+<div class="row">
+    <div class="col-12">
+        <h2>Ideas</h2>
+        <div class="row">
+            {% for name, project in projects.ideas.items() %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card project-card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ name }}</h5>
+                        <div class="mb-2">
+                            {% for tag in project.tags %}
+                                <span class="badge bg-secondary">{{ tag }}</span>
+                            {% endfor %}
+                        </div>
+                        <a href="{{ url_for('view_project', name=name) }}" class="btn btn-sm btn-outline-secondary">Develop Idea</a>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col">
+                <p class="text-muted">No ideas captured yet.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- New Project Modal -->
+<div class="modal fade" id="newProjectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('add_project') }}" method="POST">
+                    <div class="mb-3">
+                        <label for="projectName" class="form-label">Project Name</label>
+                        <input type="text" class="form-control" id="projectName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="projectDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="projectDescription" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="projectTags" class="form-label">Tags (comma-separated)</label>
+                        <input type="text" class="form-control" id="projectTags" name="tags" 
+                               placeholder="e.g., urgent, personal, coding">
+                        <div class="form-text">Separate tags with commas</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Create Project</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Idea Button -->
+<button type="button" class="btn btn-lg btn-primary rounded-circle quick-add-idea" 
+        data-bs-toggle="modal" data-bs-target="#quickIdeaModal">
+    <i class="bi bi-lightbulb"></i> +
+</button>
+
+<!-- Quick Idea Modal -->
+<div class="modal fade" id="quickIdeaModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Capture New Idea</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('quick_idea') }}" method="POST">
+                    <div class="mb-3">
+                        <label for="ideaName" class="form-label">What's your idea?</label>
+                        <input type="text" class="form-control" id="ideaName" name="idea_name" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Idea</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

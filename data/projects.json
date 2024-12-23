@@ -1,0 +1,117 @@
+{
+  "Get my shit Together": {
+    "description": "Getting my shit together",
+    "type": "regular",
+    "tasks": [
+      {
+        "description": "One task at a time",
+        "completed": false,
+        "created_at": "2024-10-23T21:53:17.509920",
+        "priority": "medium",
+        "priority_order": 2,
+        "due_date": null
+      }
+    ],
+    "created_at": "2024-10-23T20:23:36.896895",
+    "status": "active",
+    "tags": [],
+    "time_estimate": null,
+    "time_spent": 0
+  },
+  "How do I get my shit together?": {
+    "description": "If I knew that, I would do it by now.",
+    "type": "regular",
+    "tasks": [
+      {
+        "description": "One task at a time",
+        "completed": false,
+        "created_at": "2024-10-23T20:46:58.655070"
+      }
+    ],
+    "created_at": "2024-10-23T20:46:14.875902",
+    "status": "active",
+    "tags": [],
+    "time_estimate": null,
+    "time_spent": 0
+  },
+  "Something Big": {
+    "description": "",
+    "type": "idea",
+    "tasks": [
+      {
+        "description": "One task at a time",
+        "completed": false,
+        "created_at": "2024-10-23T21:12:00.809129"
+      }
+    ],
+    "created_at": "2024-10-23T20:47:31.889487",
+    "status": "active",
+    "tags": [],
+    "time_estimate": null,
+    "time_spent": 0
+  },
+  "I am not kidding": {
+    "description": "We are gonna make some Money",
+    "type": "regular",
+    "tasks": [],
+    "created_at": "2024-10-23T20:49:13.685231",
+    "status": "active",
+    "tags": [],
+    "time_estimate": null,
+    "time_spent": 0
+  },
+  "This is getting out of hand": {
+    "description": "For Real",
+    "type": "regular",
+    "tasks": [],
+    "created_at": "2024-10-23T21:16:51.546330",
+    "status": "active",
+    "tags": [
+      "Fun"
+    ],
+    "time_estimate": null,
+    "time_spent": 0
+  },
+  "Video \u00dcret": {
+    "description": "Mochi-1'i kullanarak Video \u00dcret",
+    "type": "regular",
+    "tasks": [
+      {
+        "description": "Michi-1 Bilgi topla",
+        "completed": false,
+        "created_at": "2024-10-24T03:10:11.183339",
+        "priority": "high",
+        "priority_order": 3,
+        "due_date": "2024-10-26"
+      }
+    ],
+    "created_at": "2024-10-24T03:09:47.377715",
+    "status": "active",
+    "tags": [
+      "Content Generation"
+    ],
+    "time_estimate": null,
+    "time_spent": 0
+  },
+  "start coin mining": {
+    "description": "somehow start a mining for coin",
+    "type": "regular",
+    "tasks": [
+      {
+        "description": "find minimum resources for worthy point mning for any of this ETH BTC or",
+        "completed": false,
+        "created_at": "2024-11-18T20:17:20.535639",
+        "priority": "high",
+        "priority_order": 3,
+        "due_date": "20024-12-12"
+      }
+    ],
+    "created_at": "2024-11-18T20:15:59.316830",
+    "status": "active",
+    "tags": [
+      "btc eth-ada-"
+    ],
+    "time_estimate": null,
+    "time_spent": 0
+  }
+}
